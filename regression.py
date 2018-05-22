@@ -17,9 +17,8 @@ def dealWithDirtyValuesForActiveWind(data):
     index = list()
     while i < len(data[:,0]):
     #czemu tak - wiatraki pracuja w przedziale pr wiatru od 2 do 25 wiec wnioskuje ze dane z poza tego zakresu sa bledne
-    #dodatkowo zakres 50 i 1600 dla mocy, 50 poniewaz zauwazylem duza ilosc niskich wartosci mocy dla duzych pr wiatru - cos nie tak
-    #1600 aby wyeliminowac jakies odstajace dane typu 30000, i tak wiekszosc danych nie wykracza poza 1400(zapewne max?)
-        if data[i,1] > 2 and data[i,1]<=25 and data[i,0] > 50 and data[i,0]<=1600:
+    #dodatkowo zakres <50 dla mocy poniewaz zauwazylem duza ilosc niskich wartosci mocy dla duzych pr wiatru ora w ujemnych - raczej nie powinno tak byc
+        if data[i,1] > 2 and data[i,1]<=25 and data[i,0] > 50 :
             index.append(i)
         i+=1
     data2 = data[index,:]
@@ -28,7 +27,7 @@ def dealWithDirtyValuesForReActiveWind(data):
     i = int(0)
     index = list()
     while i < len(data[:,0]):
-        if data[i,1] > 0 and data[i,1]<=25 and abs(data[i,0]) > 5:
+        if data[i,1] > 0 and data[i,1]<=26 and abs(data[i,0]) > 5:
             index.append(i)
         i+=1
     data2 = data[index,:]
@@ -51,6 +50,10 @@ size1 = len(df[['WINDSPEED']]) #ilosc danych przed czyszczeniem
 active_wind_matrix = np.array(df[['ACTIVE POWER', 'WINDSPEED']].as_matrix())
 reactive_wind_matrix = np.array(df[['REACTIVE POWER', 'WINDSPEED']].as_matrix())
 #sprawdzenie zakresow
+#print(max(active_wind_matrix[:,0]))
+#print(min(active_wind_matrix[:,0]))
+#print(max(active_wind_matrix[:,1]))
+#print(min(active_wind_matrix[:,1]))
 #plt.boxplot(active_wind_matrix[1:10000, 0]) #nie dla całoego zbioru poniewaz danych bylo za dużo jak na możliwosci mojego sprzetu ;)
 #plt.show()
 #plt.boxplot(active_wind_matrix[1:10000, 1])
@@ -144,7 +147,7 @@ re_regr.fit(re_windspeed_matrix_train, re_active_power_train)
 # Make predictions using the testing set
 re_active_power_predict = list()
 k=int(0)
-fig, axes = plt.subplots(nrows=5, figsize=(10,30))
+fig, axes = plt.subplots(nrows=5, figsize=(10,26))
 while k < len(re_windspeed_matrix_test):
     re_active_power_predict = re_regr.predict(re_windspeed_matrix_test[k])
 
