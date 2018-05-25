@@ -11,66 +11,83 @@ dla mocy czynnej i biernej od prędkości wiatru.
 
 Analizę rozpocząłem od pobrania danych i przeprowadzenia "czyszczenia"
 
-Założyłem, że analizując moc czynną mogę ograniczyć się do danych z zakresu prędkości od 2 do 25 m/s (zakres pracy turbiny)
-Dziwne wydały mi się również wartości mocy czynnej bliskie 0 występujące dla relatywnie dużych prędkości wiatru - również takie
-przypadki postanowiłem odfiltrować.
+Zbiór uczący 80%, treningowy 20%
 
-Jako że zbiór danych był duży - 790 620 wierszy (przed filtracją) postanowiłem wykorzystać losowe 40% rekordów z pierwszej połowy zbioru
-jako zbiór uczący.
+Otrzymane wyniki:
 
-Aby otrzymać czytelne wykresy stworzyłem kilka mniejszych zbiorów testowych - pozwoli to przeprowadzić testy modeli dla różnych przypadków
-oraz porównać otrzymane wyniki.
+średni błąd kwadratowy: 93297.54
+Współczynnik determinacji: 0.47
+
+Z uwagi na dużą ilość wartośći odstających otrzymać czytelne wykresy przedstawiłem wyniki dla mniejszych części danych treningowych.
 
 Poniżej przedstawiam wykresy obrazujące porównanie danych testowych z otrzymanymi wykresami modelowymi:
 <p align="center">
-  <img src="https://github.com/wlodarcp/Simple-Linear-Regression-/blob/master/Active%20Power%20Prediction.png">
+  <img src="https://github.com/wlodarcp/Simple-Linear-Regression-/blob/master/Active%20Power%5BMW%5D%20(Simple%20LR).png">
 </p>
+
 To co można zaobserwować to duże "zanieczyszczenie" danych - w każdym zbiorze testowym występuje duża liczba wartości odstających
 
-Porównując wyniki dla 5 zbiorów testowych (dla mocy czynnej): 
-
-Największa wartość współczynnika determinacji jaką udało się uzyskać to 0.7 
-Najmniejsza 0.37
-
-Najmniejszy średni błąd kwadratowy 45 545
-Największy 96 279
 
 ###### Moc bierna:
 
 Analiza została przeprowadzona analogicznie
 
-W procesie filtracji danych wyeliminowałem jedynie rekordy dla ujemnej oraz zbyt dużej prędkości oraz dla mocy biernej oscylującej wokół 0 (było ich bardzo dużo oraz występowały w całym przedziale prędkości)
+Zbiór uczący 80%, treningowy 20%
+
+Otrzymane wyniki:
+
+średni błąd kwadratowy: 25190.98
+Współczynnik determinacji: 0.18
 
 W przypadku mocy biernej rozrzut danych był jeszcze gorszy co przekłada się na większe wartości błędów oraz niższe współczynniki determinacji
 
-Największa wartość współczynnika determinacji jaką udało się uzyskać to 0.45
-Najmniejsza 0.19
+## Wykresy:
+<p align="center">
+  <img src="https://github.com/wlodarcp/Simple-Linear-Regression-/blob/master/Reactive%20Power%20%5BMVAR%5D%20(Simple%20LR).png">
+</p>
 
-Najmniejszy średni błąd kwadratowy  17 740
-Największy 25 668
+###### Moc czynna z wykorzystaniem metody walidacji krzyżowej:
+
+średni błąd kwadratowy: 97726.91
+Współczynnik determinacji: 0.44
 
 ## Wykresy:
 <p align="center">
-  <img src="https://github.com/wlodarcp/Simple-Linear-Regression-/blob/master/Reactive%20Power%20Prediction.png">
+  <img src="https://github.com/wlodarcp/Simple-Linear-Regression-/blob/master/Active%20Power%5BMW%5D%20(Cross%20Val).png">
 </p>
-Analizowane przypadki są liniowe tylko w pewnych zakresach prędkości w związku z czym lepsze rezultaty można uzyskać przeprowadzając analizę na zbiorze danych zawierających jedynie prędkości z tego zakresu
 
-Poniżej przedstawiam wyniki jakie można otrzymać dla zakresu prędkości od 7 do 16 m/s
+###### Moc bierna z wykorzystaniem metody walidacji krzyżowej:
+
+średni błąd kwadratowy: 569989.31
+Współczynnik determinacji: 0.16
+
+## Wykresy:
 <p align="center">
-  <img src="https://github.com/wlodarcp/Simple-Linear-Regression-/blob/master/Active%20Power%20Prediction%20-%20cut.png">
+  <img src="https://github.com/wlodarcp/Simple-Linear-Regression-/blob/master/Reactive%20Power%20%5BMVAR%5D%20(Cross%20Val).png">
 </p>
-Dla mocy czynnej udało się dzięki temu uzyskać lepsze wyniki - współczynnik determinacji 0.74 (maksymalny)
+
+Moc czynna zmienia się liniowo tylko w pewnych zakresach prędkości w związku z czym lepsze rezultaty można uzyskać przeprowadzając analizę na zbiorze danych zawierających jedynie prędkości z tego zakresu
+
+Poniżej przedstawiam wyniki dla mocy czynnej jakie można otrzymać dla zakresu prędkości od 7 do 15 m/s
+
+średni błąd kwadratowy: 83807.99
+Współczynnik determinacji: 0.38
+
 <p align="center">
-  <img src="https://github.com/wlodarcp/Simple-Linear-Regression-/blob/master/Reactive%20Power%20Prediction%20-%20cut.png">
+  <img src="https://github.com/wlodarcp/Simple-Linear-Regression-/blob/master/Active%20Power%5BMW%5D%20speed%207-15%20ms.png">
 </p>
-Dla mocy biernej z uwagi na bardzo duży rozrzut danych w tym zakresie otrzymane wyniki są nawet gorsze niż dla pełnego zakresu
+
 
 # Podsumowanie:
 -duży rozrzut analizowanych danych wpłynął negatywnie na wyniki - aby je poprawić należało by pomyśleć nad bardziej skomplikowanym
 sposobem filtracji danych tak aby uzyskać wykresy zbliżone do "książkowych"
 
+-analizując wykresy stworzone z różnych części zbioru treningowego można zaobserwować dużą nierównomierność rozkładu danych - w pewnych obszarach otrzymujemy prawie idealnie zgodne z oczekiwaniami kształty wykresów natomiast występują również przedziały w których dane nie dają żadnej informacji o przebiegu zjawiska (wyglądają na zupełnie losowe) - należało by przeanalizować pozostałe dane w celu znalezienia czynnika który może determinować takie wyniki
+
 -badane wartości można opisać zależnością liniową tylko na pewnych przedziałach, aby uzyskać lepsze rezultaty należało by skorzystać
 z regresji nieliniowej
+
+-wyniki uzyskane metodą walidacji krzyżowej są porównywalne a nawet gorsze od uzyskanych standardową metodą - zawewne przez tak dużą nierównomierność rozkładu
 
 -podczas analizy nie uwzględniałem innych wartości które mogły by wnieść wiele informacji do analizy i pozwoliły by stworzyć lepsze modele
 
