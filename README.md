@@ -7,7 +7,7 @@ dla mocy czynnej i biernej od prędkości wiatru.
 
 ## Realizacja
 
-###### Moc czynna:
+## Moc czynna:
 
 Zbiór uczący 80%, treningowy 20%
 
@@ -27,7 +27,7 @@ Poniżej przedstawiam wykresy obrazujące porównanie danych testowych z otrzyma
 To co można zaobserwować to duże "zanieczyszczenie" danych - w każdym zbiorze testowym występuje duża liczba wartości odstających
 
 
-###### Moc bierna:
+## Moc bierna:
 
 Analiza została przeprowadzona analogicznie
 
@@ -46,7 +46,7 @@ W przypadku mocy biernej rozrzut danych był jeszcze gorszy co przekłada się n
   <img src="https://github.com/wlodarcp/Simple-Linear-Regression-/blob/master/Reactive%20Power%20%5BMVAR%5D%20(Simple%20LR).png">
 </p>
 
-###### Moc czynna z wykorzystaniem metody walidacji krzyżowej:
+## Moc czynna z wykorzystaniem metody walidacji krzyżowej:
 
 średni błąd kwadratowy: 97726.91
 
