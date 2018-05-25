@@ -57,7 +57,7 @@ Współczynnik determinacji: 0.44
   <img src="https://github.com/wlodarcp/Simple-Linear-Regression-/blob/master/Active%20Power%5BMW%5D%20(Cross%20Val).png">
 </p>
 
-###### Moc bierna z wykorzystaniem metody walidacji krzyżowej:
+## Moc bierna z wykorzystaniem metody walidacji krzyżowej:
 
 średni błąd kwadratowy: 569989.31
 
