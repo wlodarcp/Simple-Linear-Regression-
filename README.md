@@ -9,13 +9,12 @@ dla mocy czynnej i biernej od prędkości wiatru.
 
 ###### Moc czynna:
 
-Analizę rozpocząłem od pobrania danych i przeprowadzenia "czyszczenia"
-
 Zbiór uczący 80%, treningowy 20%
 
 Otrzymane wyniki:
 
 średni błąd kwadratowy: 93297.54
+
 Współczynnik determinacji: 0.47
 
 Z uwagi na dużą ilość wartośći odstających otrzymać czytelne wykresy przedstawiłem wyniki dla mniejszych części danych treningowych.
@@ -37,6 +36,7 @@ Zbiór uczący 80%, treningowy 20%
 Otrzymane wyniki:
 
 średni błąd kwadratowy: 25190.98
+
 Współczynnik determinacji: 0.18
 
 W przypadku mocy biernej rozrzut danych był jeszcze gorszy co przekłada się na większe wartości błędów oraz niższe współczynniki determinacji
@@ -49,6 +49,7 @@ W przypadku mocy biernej rozrzut danych był jeszcze gorszy co przekłada się n
 ###### Moc czynna z wykorzystaniem metody walidacji krzyżowej:
 
 średni błąd kwadratowy: 97726.91
+
 Współczynnik determinacji: 0.44
 
 ## Wykresy:
@@ -59,6 +60,7 @@ Współczynnik determinacji: 0.44
 ###### Moc bierna z wykorzystaniem metody walidacji krzyżowej:
 
 średni błąd kwadratowy: 569989.31
+
 Współczynnik determinacji: 0.16
 
 ## Wykresy:
@@ -71,6 +73,7 @@ Moc czynna zmienia się liniowo tylko w pewnych zakresach prędkości w związku
 Poniżej przedstawiam wyniki dla mocy czynnej jakie można otrzymać dla zakresu prędkości od 7 do 15 m/s
 
 średni błąd kwadratowy: 83807.99
+
 Współczynnik determinacji: 0.38
 
 <p align="center">
