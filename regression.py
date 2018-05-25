@@ -1,171 +1,215 @@
-#! /usr/bin/env python
+#!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-from io import BytesIO
-from zipfile import ZipFile
 import urllib.request
-import os.path
-import numpy as np
-from sklearn import linear_model
-import pandas as pd
-from sklearn.metrics import mean_squared_error, r2_score
+from io import BytesIO
+from os import path
+from zipfile import ZipFile
+
 import matplotlib.pyplot as plt
-from random import choices
-
-def dealWithDirtyValuesForActiveWind(data):
-    i = int(0)
-    index = list()
-    while i < len(data[:,0]):
-    #czemu tak - wiatraki pracuja w przedziale pr wiatru od 2 do 25 wiec wnioskuje ze dane z poza tego zakresu sa bledne
-    #dodatkowo zakres <50 dla mocy poniewaz zauwazylem duza ilosc niskich wartosci mocy dla duzych pr wiatru ora w ujemnych - raczej nie powinno tak byc
-        if data[i,1] > 2 and data[i,1]<=25 and data[i,0] > 50 :
-            index.append(i)
-        i+=1
-    data2 = data[index,:]
-    return data2
-def dealWithDirtyValuesForReActiveWind(data):
-    i = int(0)
-    index = list()
-    while i < len(data[:,0]):
-        if data[i,1] > 0 and data[i,1]<=26 and abs(data[i,0]) > 5:
-            index.append(i)
-        i+=1
-    data2 = data[index,:]
-    return data2
-ur = 'https://s3.eu-central-1.amazonaws.com/windally-test/dataset.csv.zip'
-filename = 'dataset.csv'
-
-#sprawdza czy istnieje plik filename i jak nie to pobiera zipa i go rozpakowuje
-if not os.path.exists(filename):
-    url = urllib.request.urlopen(ur)
-    with ZipFile(BytesIO(url.read())) as my_zip_file:
-        my_zip_file.extractall()
-else:
-    print('File exist')
-
-# czyta dane do dataframe    
-df = pd.read_csv(filename, infer_datetime_format = True, encoding = "ISO-8859-1", engine='python')
-size1 = len(df[['WINDSPEED']]) #ilosc danych przed czyszczeniem
-#ladujemy do macierzy
-active_wind_matrix = np.array(df[['ACTIVE POWER', 'WINDSPEED']].as_matrix())
-reactive_wind_matrix = np.array(df[['REACTIVE POWER', 'WINDSPEED']].as_matrix())
-#sprawdzenie zakresow
-#print(max(active_wind_matrix[:,0]))
-#print(min(active_wind_matrix[:,0]))
-#print(max(active_wind_matrix[:,1]))
-#print(min(active_wind_matrix[:,1]))
-#plt.boxplot(active_wind_matrix[1:10000, 0]) #nie dla całoego zbioru poniewaz danych bylo za dużo jak na możliwosci mojego sprzetu ;)
-#plt.show()
-#plt.boxplot(active_wind_matrix[1:10000, 1])
-#plt.show()
-#plt.boxplot(reactive_wind_matrix[1:10000, 0])
-#plt.show()
-#plt.boxplot(reactive_wind_matrix[1:10000, 1])
-#plt.show()
-
-active_wind_matrix = dealWithDirtyValuesForActiveWind(active_wind_matrix)
-reactive_wind_matrix = dealWithDirtyValuesForReActiveWind(reactive_wind_matrix)
-#nowy rozmiar po czyszczeniu
-size = len(active_wind_matrix[:,0])
-re_size = len(reactive_wind_matrix[:,0])
-#do zbioru uczacego biore losowe 40% danych (z 1 połowy pomiarów)
-items = range(1,(int)(size*0.5))
-re_items = range(1,(int)(re_size*0.5))
-train_index = choices(items, k=(int)(0.4*size))
-re_train_index = choices(re_items, k=(int)(0.4*re_size))
-
-#pozostałe dane na testowe, jest ich duzo więc żeby było cos widac na wykresach dziele je na kilka mniejszych zbiorow i dla kazdego testuje oddzielnie
-items = range((int)(size*0.5), (int)(size*0.6))
-test_index = list()
-re_items = range((int)(re_size*0.5), (int)(re_size*0.6))
-re_test_index = list()
-tmp = 0.6
-#selekcja danych do zbioróW testowych
-while tmp<1:
-    test_index.append(choices(items, k=(int)(0.01*size)))
-    items = range((int)(size*tmp), (int)(size*(tmp+0.1)))
-    re_test_index.append(choices(re_items, k=(int)(0.05*re_size)))
-    re_items = range((int)(re_size*tmp), (int)(re_size*(tmp+0.1)))
-    tmp +=0.1
-
-#zbiory treningowe 
-active_power_matrix = np.array(active_wind_matrix[:,0]).reshape(size,1)
-active_power_train = active_power_matrix[train_index]
-re_active_power_matrix = np.array(reactive_wind_matrix[:,0]).reshape(re_size,1)
-re_active_power_train = re_active_power_matrix[re_train_index]
-#cd zbiory treningowe
-windspeed_matrix = np.array(active_wind_matrix[:,1]).reshape(size,1)
-windspeed_matrix_train = windspeed_matrix[train_index]
-re_windspeed_matrix = np.array(reactive_wind_matrix[:,1]).reshape(re_size,1)
-re_windspeed_matrix_train = re_windspeed_matrix[re_train_index]
-
-active_power_test = list()
-windspeed_matrix_test = list()
-re_active_power_test = list()
-re_windspeed_matrix_test = list()
-#zbiory testowe
-for i in test_index:
-    active_power_test.append(active_power_matrix[i])
-    windspeed_matrix_test.append(windspeed_matrix[i])
-for i in re_test_index:
-    re_active_power_test.append(re_active_power_matrix[i])
-    re_windspeed_matrix_test.append(re_windspeed_matrix[i])
-#tworzy obiekt do regresji liniowej
-regr = linear_model.LinearRegression()
-
-regr.fit(windspeed_matrix_train, active_power_train)
+import numpy as np
+import pandas as pd
+from sklearn import linear_model
+from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.model_selection import cross_val_predict, cross_validate, \
+    train_test_split
 
 
-k=int(0)
-fig, axes = plt.subplots(nrows=5, figsize=(10,30))
-while k < len(windspeed_matrix_test):
-    active_power_predict = regr.predict(windspeed_matrix_test[k])
+# function to download and extract zip file
 
-    # The mean squared error
-    print("Mean squared error: %.2f"
-          % mean_squared_error(active_power_test[k], active_power_predict))
-    # Explained variance score: 1 is perfect prediction
-    print('Coefficient of determination: %.2f' % r2_score(active_power_test[k], active_power_predict))
+def loadData(URL):
+    URL = urllib.request.urlopen(URL)
+    with ZipFile(BytesIO(URL.read())) as my_zip_file:
+        names = my_zip_file.namelist()
+        names = [names for names in names if names.endswith('.csv')
+                 and '/' not in names]
+        if not path.exists(names[0]):
+            my_zip_file.extractall()
+        else:
+            print ('exists')
+        return names[0]
 
-    # Plot outputs
-    axes[k].scatter(windspeed_matrix_test[k],active_power_test[k],  color='black', marker = '.', label = "Test values")
-    axes[k].plot(windspeed_matrix_test[k],active_power_predict, color='blue', linewidth=3,  label = "Predict line")
-    axes[k].legend(loc = 'upper right')
-    axes[k].set_ylabel('Active Power [MW]', size = 15)
-    axes[k].set_xlabel('Wind Speed [m/s]', size = 15)
-    axes[k].set_xticks(range(25))
-    textstr = 'Mean squared error: %.2f \nVariance score: %.2f' % (mean_squared_error(active_power_test[k], active_power_predict) , r2_score(active_power_test[k], active_power_predict))
-    axes[k].text(s = textstr, x = 0, y = 1400)
-    k+=1
-plt.savefig("Active Power Prediction.png")
-plt.show()
 
-re_regr = linear_model.LinearRegression()
+# function to produce plots
 
-re_regr.fit(re_windspeed_matrix_train, re_active_power_train)
+def makeSomePlots(
+    X_test,
+    Y_test,
+    predict,
+    plotNum,
+    yAxName,
+    divideLenOfDataBy,
+    ):
+    howMAnyPointOnPlot = int(len(predict) / divideLenOfDataBy)
+    (fig, axes) = plt.subplots(nrows=plotNum, figsize=(2 * plotNum, 6
+                               * plotNum))
+    for i in range(plotNum):
+        plotHelper = howMAnyPointOnPlot * (i + 1)
+        if plotHelper >= len(predict):
+            break
+        axes[i].scatter(X_test[plotHelper
+                        - howMAnyPointOnPlot:plotHelper],
+                        Y_test[plotHelper
+                        - howMAnyPointOnPlot:plotHelper], color='black'
+                        , marker='.', label='Test values')
+        axes[i].plot(X_test[plotHelper
+                     - howMAnyPointOnPlot:plotHelper],
+                     predict[plotHelper
+                     - howMAnyPointOnPlot:plotHelper], color='blue',
+                     linewidth=3, label='Predict line')
+        axes[i].legend(loc='upper right')
+        axes[i].set_ylabel(yAxName, size=15)
+        axes[i].set_xlabel('Wind Speed [m/s]', size=15)
+    yAxName = yAxName + '.png'
+    plt.savefig(yAxName)
+    plt.show()
 
-# Make predictions using the testing set
-re_active_power_predict = list()
-k=int(0)
-fig, axes = plt.subplots(nrows=5, figsize=(10,26))
-while k < len(re_windspeed_matrix_test):
-    re_active_power_predict = re_regr.predict(re_windspeed_matrix_test[k])
 
-    # The mean squared error
-    print("Mean squared error: %.2f"
-          % mean_squared_error(re_active_power_test[k], re_active_power_predict))
-    # Explained variance score: 1 is perfect prediction
-    print('Coefficient of determination: %.2f' % r2_score(re_active_power_test[k], re_active_power_predict))
+# function to produce predictions
 
-    # Plot outputs
-    axes[k].scatter(re_windspeed_matrix_test[k],re_active_power_test[k],  color='black', marker = '.', label = "Test values")
-    axes[k].plot(re_windspeed_matrix_test[k],re_active_power_predict, color='blue', linewidth=3,  label = "Predict line")
-    axes[k].legend(loc = 'upper right')
-    axes[k].set_ylabel('Reactive Active Power [VAR]', size = 15)
-    axes[k].set_xlabel('Wind Speed [m/s]', size = 15)
-    axes[k].set_xticks(range(25))
-    textstr = 'Mean squared error: %.2f \nVariance score: %.2f' % (mean_squared_error(re_active_power_test[k], re_active_power_predict) , r2_score(re_active_power_test[k], re_active_power_predict))
-    axes[k].text(s = textstr, x = 0, y = 300)
-    k+=1
-plt.savefig("Reactive Power Prediction.png")
-plt.show()
+def producePredictionFromSplitDataByLR(
+    X_train,
+    X_test,
+    Y_train,
+    Y_test,
+    ):
+    regr = linear_model.LinearRegression()
+    regr.fit(X_train, Y_train)
+    predict = regr.predict(X_test)
+    mean_sq_err = mean_squared_error(Y_test, predict)
+    coef = r2_score(Y_test, predict)
+    return (predict, mean_sq_err, coef)
+
+
+def main():
+    URL = \
+        'https://s3.eu-central-1.amazonaws.com/windally-test/dataset.csv.zip'
+    FILENAME = loadData(URL)
+    df = pd.read_csv(FILENAME, infer_datetime_format=True,
+                     encoding='ISO-8859-1', engine='python')
+    
+    df = df[df['WINDSPEED'] >= 0]
+    df = df[df['ACTIVE POWER'] >= 0]
+    active_wind_matrix = np.array(df[['ACTIVE POWER', 'WINDSPEED'
+                                  ]].as_matrix())
+    reactive_wind_matrix = np.array(df[['REACTIVE POWER', 'WINDSPEED'
+                                    ]].as_matrix())
+    size = len(active_wind_matrix[:, 0])
+
+    wind = np.array(active_wind_matrix[:, 1]).reshape(size, 1)
+    activepower = np.array(active_wind_matrix[:, 0]).reshape(size, 1)
+    reactivepower = np.array(reactive_wind_matrix[:, 0]).reshape(size,
+            1)
+
+    # simple linear regresion for activepower - test size 20%, number of generate plots 5, plot are generated for pieces of test data
+    # to be more clear
+
+    (X_train, X_test, Y_train, Y_test) = train_test_split(wind,
+            activepower, test_size=0.2, random_state=0)
+    (predict, error1, coef1) = \
+        producePredictionFromSplitDataByLR(X_train, X_test, Y_train,
+            Y_test)
+    makeSomePlots(
+        X_test,
+        Y_test,
+        predict,
+        5,
+        'Active Power[MW] (Simple LR)',
+        20,
+        )
+    print ('Active power Mean squared error: %.2f' % error1)
+    print ('Active power Coefficient of determination: %.2f' % coef1)
+
+    # simple lr for reactive power similary like up
+
+    (X_train, X_test, Y_train, Y_test) = train_test_split(wind,
+            reactivepower, test_size=0.2, random_state=0)
+    (predict, error2, coef2) = \
+        producePredictionFromSplitDataByLR(X_train, X_test, Y_train,
+            Y_test)
+    makeSomePlots(
+        X_test,
+        Y_test,
+        predict,
+        5,
+        'Reactive Power [MVAR] (Simple LR)',
+        20,
+        )
+    print ('Reactive power Mean squared error: %.2f' % error2)
+    print ('Reactive power Coefficient of determination: %.2f' % coef2)
+
+    # prediction for active power using cross validation
+
+    lr = linear_model.LinearRegression()
+    cv_results = cross_validate(lr, wind, activepower, cv=10)
+    predict2 = cross_val_predict(lr, wind, activepower, cv=10)
+    error11 = mean_squared_error(activepower, predict2)
+    coef11 = r2_score(activepower, predict2)
+    makeSomePlots(
+        wind,
+        activepower,
+        predict2,
+        4,
+        'Active Power[MW] (Cross Val)',
+        20,
+        )
+    print ('Active power Mean squared error: %.2f' % error11)
+    print ('Active power Coefficient of determination: %.2f' % coef11)
+
+    # prediction for reactive power using cross validation
+
+    cv_results2 = cross_validate(lr, wind, reactivepower, cv=10)
+    predict2 = cross_val_predict(lr, wind, reactivepower, cv=10)
+    error21 = mean_squared_error(activepower, predict2)
+    coef21 = r2_score(reactivepower, predict2)
+    makeSomePlots(
+        wind,
+        reactivepower,
+        predict2,
+        4,
+        'Reactive Power [MVAR] (Cross Val)',
+        20,
+        )
+    print ('Reactive power Mean squared error: %.2f' % error21)
+    print ('Reactive power Coefficient of determination: %.2f' % coef21)
+
+    # comparison of results
+
+    print ('Active power Difference between errors in simple method and CV method: %.2f' \
+        % abs(error1 - error11))
+    print ('Rective power Difference between errors in simple method and CV method: %.2f' \
+        % abs(error2 - error21))
+    print ('Active power Difference between coefs in simple method and CV method: %.2f' \
+        % abs(coef1 - coef11))
+    print ('Rective power Difference between coefs in simple method and CV method: %.2f' \
+        % abs(coef2 - coef21))
+
+    # # check results for active power only for wind between 7 and 15 m/s
+
+    df = df[df['WINDSPEED'] >= 7]
+    df = df[df['WINDSPEED'] <= 15]
+    active_wind_matrix = np.array(df[['ACTIVE POWER', 'WINDSPEED'
+                                  ]].as_matrix())
+    size = len(active_wind_matrix[:, 0])
+    wind = np.array(active_wind_matrix[:, 1]).reshape(size, 1)
+    activepower = np.array(active_wind_matrix[:, 0]).reshape(size, 1)
+
+    (X_train, X_test, Y_train, Y_test) = train_test_split(wind,
+            activepower, test_size=0.2, random_state=0)
+    (predict3, error3, coef3) = \
+        producePredictionFromSplitDataByLR(X_train, X_test, Y_train,
+            Y_test)
+    makeSomePlots(
+        X_test,
+        Y_test,
+        predict3,
+        5,
+        'Active Power[MW] speed 7-15 ms',
+        5,
+        )
+    print ('Active power Mean squared error: %.2f' % error3)
+    print ('Active power Coefficient of determination: %.2f' % coef3)
+
+
+if __name__ == '__main__':
+    main()
